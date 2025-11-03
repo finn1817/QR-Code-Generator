@@ -234,13 +234,63 @@
         </form>
 
         <div class="register-link">
-            <p>Test Account: <strong>user@test.com / user123</strong></p>
+            <a href="#" id="openRegister">Create a new account</a>
+        </div>
+
+        <!-- Register Modal -->
+        <div id="registerModal" style="display:none; position: fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index: 9999;">
+            <div style="background: var(--bg-card); padding: 26px; border-radius: 16px; width: 95%; max-width: 460px; box-shadow: 0 10px 30px var(--shadow); border:1px solid var(--border-color)">
+                <h2 style="color: var(--text-primary); margin-bottom: 16px;">Create Account</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="regName">Display Name</label>
+                        <input type="text" id="regName" placeholder="Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword2">Confirm Password</label>
+                        <input type="password" id="regPassword2" placeholder="Re-enter password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Default Theme (optional)</label>
+                        <div style="display:flex; gap:12px; align-items:center; color: var(--text-secondary);">
+                            <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+                                <input type="radio" name="regTheme" value="light" checked>
+                                <span>Light</span>
+                            </label>
+                            <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+                                <input type="radio" name="regTheme" value="dark">
+                                <span>Dark</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regCompany">Company (optional)</label>
+                        <input type="text" id="regCompany" placeholder="Your company name">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPhone">Phone (optional)</label>
+                        <input type="tel" id="regPhone" placeholder="+1 555 123 4567">
+                    </div>
+                    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                        <button type="button" id="cancelRegister" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" id="createAccountBtn" class="btn btn-primary">Create Account</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
@@ -259,6 +309,10 @@
         const loginBtn = document.getElementById('loginBtn');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
+        const registerModal = document.getElementById('registerModal');
+        const openRegister = document.getElementById('openRegister');
+        const cancelRegister = document.getElementById('cancelRegister');
+        const registerForm = document.getElementById('registerForm');
 
         function showError(message) {
             errorMessage.textContent = message;
@@ -271,6 +325,89 @@
             successMessage.style.display = 'block';
             errorMessage.style.display = 'none';
         }
+
+        // Register modal controls
+        openRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerModal.style.display = 'flex';
+        });
+        cancelRegister.addEventListener('click', () => {
+            registerModal.style.display = 'none';
+        });
+        registerModal.addEventListener('click', (e) => {
+            if (e.target === registerModal) registerModal.style.display = 'none';
+        });
+
+        // Handle registration
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim().toLowerCase();
+            const password = document.getElementById('regPassword').value;
+            const password2 = document.getElementById('regPassword2').value;
+            const themeChoice = (document.querySelector('input[name="regTheme"]:checked')?.value || 'light');
+            const company = document.getElementById('regCompany').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+
+            if (!name || !email || !password || !password2) {
+                showError('Please fill in all registration fields');
+                return;
+            }
+            if (password !== password2) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            try {
+                // Check if user exists
+                const q = query(collection(db, 'Users'), where('email', '==', email));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    showError('An account with this email already exists');
+                    return;
+                }
+
+                // Create user (non-admin)
+                const now = new Date().toISOString();
+                const theme = themeChoice === 'dark' ? 'dark' : 'light';
+                const themeStatus = (theme === 'light');
+                const docRef = await addDoc(collection(db, 'Users'), {
+                    email: email,
+                    displayName: name,
+                    password: password,
+                    isAdmin: 1, // 1 => user, 0 => admin (keeps app's convention)
+                    theme: theme,
+                    themeStatus: themeStatus,
+                    company: company || null,
+                    phone: phone || null,
+                    createdAt: now,
+                    lastLogin: now
+                });
+
+                // Save session and redirect
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    userId: docRef.id,
+                    email: email,
+                    displayName: name,
+                    isAdmin: 1,
+                    theme: theme,
+                    themeStatus: themeStatus
+                }));
+
+                // Persist device theme preference for login page aesthetics
+                try { localStorage.setItem('appTheme', theme); } catch {}
+
+                showSuccess('Account created! Redirecting...');
+                registerModal.style.display = 'none';
+                setTimeout(() => {
+                    window.location.href = 'generate-qr/make-me.html';
+                }, 800);
+
+            } catch (err) {
+                console.error('Registration error:', err);
+                showError('Could not create account. Please try again.');
+            }
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();

@@ -512,6 +512,8 @@
         }
 
         // Load all users
+        const LOCKED_ADMIN_EMAIL = 'admin@test.com'; // Assumption: original admin to lock
+
         async function loadMembers() {
             const membersTableBody = document.getElementById('membersTableBody');
             membersTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading...</td></tr>';
@@ -534,6 +536,15 @@
                         '<span class="admin-badge">Admin</span>' : 
                         '<span class="user-badge">User</span>';
 
+                    const isLocked = user.email === LOCKED_ADMIN_EMAIL;
+                    const editBtn = isLocked
+                        ? '<button class="action-btn edit" disabled title="Locked">Edit</button>'
+                        : `<button class="action-btn edit" onclick="editUser('${userId}', '${user.displayName.replace(/'/g, "\'")}', '${user.email}', ${user.isAdmin})">Edit</button>`;
+
+                    const delBtn = (isLocked || user.email === currentUser.email)
+                        ? '<button class="action-btn delete" disabled title="Not allowed">Delete</button>'
+                        : `<button class="action-btn delete" onclick="deleteUser('${userId}', '${user.email}')">Delete</button>`;
+
                     html += `
                         <tr>
                             <td>${user.displayName}</td>
@@ -542,8 +553,8 @@
                             <td>${lastLogin}</td>
                             <td>${user.theme}</td>
                             <td>
-                                <button class="action-btn edit" onclick="editUser('${userId}', '${user.displayName}', '${user.email}', ${user.isAdmin})">Edit</button>
-                                <button class="action-btn delete" onclick="deleteUser('${userId}', '${user.email}')">Delete</button>
+                                ${editBtn}
+                                ${delBtn}
                             </td>
                         </tr>
                     `;
@@ -564,6 +575,10 @@
         let currentEditUserId = null;
 
         window.editUser = function(userId, name, email, isAdmin) {
+            if (email === LOCKED_ADMIN_EMAIL) {
+                showNotification('This account is locked and cannot be edited', 'error');
+                return;
+            }
             currentEditUserId = userId;
             document.getElementById('editName').value = name;
             document.getElementById('editEmail').value = email;
@@ -585,6 +600,12 @@
             const newRole = parseInt(document.getElementById('editRole').value);
 
             try {
+                // Prevent locking admin email from being changed or demoted
+                if (document.getElementById('editEmail').value === LOCKED_ADMIN_EMAIL) {
+                    showNotification('This account is locked and cannot be modified', 'error');
+                    editModal.style.display = 'none';
+                    return;
+                }
                 const updateData = {
                     displayName: newName,
                     email: newEmail,
