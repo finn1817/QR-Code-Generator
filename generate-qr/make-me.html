@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator - QR-Codes by Dan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d1;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #7c3aed;
+            --accent-hover: #6366f1;
+            --border-color: #2d3748;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #7c3aed;
+            --accent-hover: #6366f1;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .user-info strong {
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+            transform: rotate(20deg);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 40px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .color-size-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-input-wrapper input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .color-input-wrapper input[type="text"] {
+            flex: 1;
+        }
+
+        /* QR Preview */
+        .qr-preview {
+            text-align: center;
+        }
+
+        #qrcode {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        #qrcode canvas {
+            display: block !important;
+            margin: 0 auto;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* History Table */
+        .history-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .history-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow-x: auto;
+        }
+
+        .history-table thead {
+            background: var(--bg-secondary);
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .history-table th {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .history-table td {
+            color: var(--text-secondary);
+        }
+
+        .history-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .qr-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            background: var(--accent-primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .container {
+                padding: 0 20px;
+                margin: 20px auto;
+            }
+
+            .color-size-group {
+                grid-template-columns: 1fr;
+            }
+
+            .history-table {
+                font-size: 12px;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 8px;
+            }
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .notification.success {
+            background: var(--success);
+            color: white;
+        }
+
+        .notification.error {
+            background: var(--error);
+            color: white;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>🔲 QR-Codes by Dan</h1>
+        <div class="header-actions">
+            <div class="user-info">
+                Welcome, <strong id="userName">User</strong>
+            </div>
+            <button class="theme-toggle" id="themeToggle" title="Toggle Theme">🌙</button>
+            <button class="btn btn-secondary" id="myQRsBtn">My QR Codes</button>
+            <button class="btn btn-secondary" id="adminPanelBtn" style="display: none;">Admin Panel</button>
+            <button class="btn btn-primary" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- Generator Card -->
+            <div class="card">
+                <h2>Generate QR Code</h2>
+                
+                <div class="form-group">
+                    <label for="qrType">QR Code Type</label>
+                    <select id="qrType">
+                        <option value="URL">Website URL</option>
+                        <option value="Text">Plain Text</option>
+                        <option value="Email">Email</option>
+                        <option value="Phone">Phone Number</option>
+                        <option value="WiFi">WiFi Credentials</option>
+                    </select>
+                </div>
+
+                <div id="dynamicFields">
+                    <!-- Dynamic fields will be inserted here -->
+                </div>
+
+                <div class="color-size-group">
+                    <div class="form-group">
+                        <label>Dark Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="colorDark" value="#000000">
+                            <input type="text" id="colorDarkText" value="#000000" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Light Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="colorLight" value="#ffffff">
+                            <input type="text" id="colorLightText" value="#ffffff" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="qrSize">QR Code Size (px)</label>
+                    <input type="number" id="qrSize" value="256" min="128" max="512" step="64">
+                </div>
+
+                <button class="btn btn-primary" id="generateBtn" style="width: 100%;">Generate QR Code</button>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="card qr-preview">
+                <h2>QR Code Preview</h2>
+                <div id="qrcode"></div>
+                <div class="download-buttons" id="downloadButtons" style="display: none;">
+                    <button class="btn btn-primary" id="downloadPNG">Download PNG</button>
+                    <button class="btn btn-primary" id="downloadJPG">Download JPG</button>
+                    <button class="btn btn-secondary" id="saveToHistory">Save to My QR Codes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="history-section">
+            <h2>My QR Code History</h2>
+            <div id="historyContainer">
+                <div class="empty-state">
+                    <p>No QR codes generated yet. Create your first one above!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
+            authDomain: "qr-code-generator-a7892.firebaseapp.com",
+            projectId: "qr-code-generator-a7892",
+            storageBucket: "qr-code-generator-a7892.firebasestorage.app",
+            messagingSenderId: "482907274907",
+            appId: "1:482907274907:web:2c23dc2ea89ea4d3a1103e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Check authentication
+        let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = '../index.html';
+        }
+
+        // Display user info
+        document.getElementById('userName').textContent = currentUser.displayName;
+
+        // Show admin button if admin
+        if (currentUser.isAdmin === 0) {
+            document.getElementById('adminPanelBtn').style.display = 'block';
+        }
+
+        // Theme management
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        function applyTheme(theme) {
+            body.setAttribute('data-theme', theme);
+            themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('appTheme', theme);
+        }
+
+        // Apply user's saved theme
+        applyTheme(currentUser.theme);
+
+        themeToggle.addEventListener('click', async () => {
+            const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            
+            // Update theme in Firebase
+            try {
+                const usersRef = collection(db, "Users");
+                const q = query(usersRef, where("email", "==", currentUser.email));
+                const querySnapshot = await getDocs(q);
+                
+                querySnapshot.forEach(async (docSnap) => {
+                    await updateDoc(doc(db, "Users", docSnap.id), {
+                        theme: newTheme
+                    });
+                });
+
+                currentUser.theme = newTheme;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            } catch (error) {
+                console.error('Error updating theme:', error);
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = '../index.html';
+        });
+
+        // Admin Panel
+        document.getElementById('adminPanelBtn').addEventListener('click', () => {
+            window.location.href = '../members.html';
+        });
+
+        // Dynamic form fields based on QR type
+        const qrTypeSelect = document.getElementById('qrType');
+        const dynamicFields = document.getElementById('dynamicFields');
+
+        const formTemplates = {
+            URL: `
+                <div class="form-group">
+                    <label for="urlInput">Website URL</label>
+                    <input type="url" id="urlInput" placeholder="https://example.com" required>
+                </div>
+            `,
+            Text: `
+                <div class="form-group">
+                    <label for="textInput">Text Content</label>
+                    <textarea id="textInput" placeholder="Enter any text here..." required></textarea>
+                </div>
+            `,
+            Email: `
+                <div class="form-group">
+                    <label for="emailInput">Email Address</label>
+                    <input type="email" id="emailInput" placeholder="email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="emailSubject">Subject (Optional)</label>
+                    <input type="text" id="emailSubject" placeholder="Email subject">
+                </div>
+                <div class="form-group">
+                    <label for="emailBody">Body (Optional)</label>
+                    <textarea id="emailBody" placeholder="Email message"></textarea>
+                </div>
+            `,
+            Phone: `
+                <div class="form-group">
+                    <label for="phoneInput">Phone Number</label>
+                    <input type="tel" id="phoneInput" placeholder="+1234567890" required>
+                </div>
+            `,
+            WiFi: `
+                <div class="form-group">
+                    <label for="wifiSSID">Network Name (SSID)</label>
+                    <input type="text" id="wifiSSID" placeholder="MyWiFiNetwork" required>
+                </div>
+                <div class="form-group">
+                    <label for="wifiPassword">Password</label>
+                    <input type="text" id="wifiPassword" placeholder="password123" required>
+                </div>
+                <div class="form-group">
+                    <label for="wifiEncryption">Encryption Type</label>
+                    <select id="wifiEncryption">
+                        <option value="WPA">WPA/WPA2</option>
+                        <option value="WEP">WEP</option>
+                        <option value="nopass">None</option>
+                    </select>
+                </div>
+            `
+        };
+
+        function updateFormFields() {
+            const selectedType = qrTypeSelect.value;
+            dynamicFields.innerHTML = formTemplates[selectedType];
+        }
+
+        qrTypeSelect.addEventListener('change', updateFormFields);
+        updateFormFields();
+
+        // Color pickers
+        const colorDark = document.getElementById('colorDark');
+        const colorDarkText = document.getElementById('colorDarkText');
+        const colorLight = document.getElementById('colorLight');
+        const colorLightText = document.getElementById('colorLightText');
+
+        colorDark.addEventListener('input', (e) => {
+            colorDarkText.value = e.target.value;
+        });
+
+        colorLight.addEventListener('input', (e) => {
+            colorLightText.value = e.target.value;
+        });
+
+        // QR Code Generation
+        let qrcodeInstance = null;
+        let currentQRData = null;
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function getQRData() {
+            const type = qrTypeSelect.value;
+            let data = '';
+
+            switch(type) {
+                case 'URL':
+                    data = document.getElementById('urlInput').value;
+                    break;
+                case 'Text':
+                    data = document.getElementById('textInput').value;
+                    break;
+                case 'Email':
+                    const email = document.getElementById('emailInput').value;
+                    const subject = document.getElementById('emailSubject').value;
+                    const body = document.getElementById('emailBody').value;
+                    data = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    break;
+                case 'Phone':
+                    data = `tel:${document.getElementById('phoneInput').value}`;
+                    break;
+                case 'WiFi':
+                    const ssid = document.getElementById('wifiSSID').value;
+                    const password = document.getElementById('wifiPassword').value;
+                    const encryption = document.getElementById('wifiEncryption').value;
+                    data = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
+                    break;
+            }
+
+            return data;
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const qrData = getQRData();
+
+            if (!qrData || qrData.trim() === '') {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+
+            const size = parseInt(document.getElementById('qrSize').value);
+            const darkColor = colorDark.value;
+            const lightColor = colorLight.value;
+
+            try {
+                qrcodeInstance = new QRCode(qrcodeContainer, {
+                    text: qrData,
+                    width: size,
+                    height: size,
+                    colorDark: darkColor,
+                    colorLight: lightColor,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                currentQRData = {
+                    type: qrTypeSelect.value,
+                    data: qrData,
+                    settings: {
+                        size: size,
+                        colorDark: darkColor,
+                        colorLight: lightColor
+                    }
+                };
+
+                document.getElementById('downloadButtons').style.display = 'flex';
+                showNotification('QR Code generated successfully!');
+
+                // Log to Firebase
+                await addDoc(collection(db, "logs"), {
+                    userId: currentUser.userId,
+                    userName: currentUser.displayName,
+                    qrType: qrTypeSelect.value,
+                    qrData: qrData,
+                    qrSettings: currentQRData.settings,
+                    timestamp: new Date().toISOString()
+                });
+
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                showNotification('Error generating QR code', 'error');
+            }
+        });
+
+        // Download functions
+        function downloadQRCode(format) {
+            if (!qrcodeInstance) {
+                showNotification('Please generate a QR code first', 'error');
+                return;
+            }
+
+            const canvas = document.querySelector('#qrcode canvas');
+            const link = document.createElement('a');
+            link.download = `qrcode-${Date.now()}.${format}`;
+
+            if (format === 'png') {
+                link.href = canvas.toDataURL('image/png');
+            } else if (format === 'jpg') {
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+            }
+
+            link.click();
+            showNotification(`QR Code downloaded as ${format.toUpperCase()}`);
+        }
+
+        document.getElementById('downloadPNG').addEventListener('click', () => downloadQRCode('png'));
+        document.getElementById('downloadJPG').addEventListener('click', () => downloadQRCode('jpg'));
+
+        // Save to history
+        document.getElementById('saveToHistory').addEventListener('click', async () => {
+            if (!currentQRData) {
+                showNotification('Please generate a QR code first', 'error');
+                return;
+            }
+
+            const canvas = document.querySelector('#qrcode canvas');
+            const imageData = canvas.toDataURL('image/png');
+
+            try {
+                await addDoc(collection(db, "qrCodes"), {
+                    userId: currentUser.userId,
+                    type: currentQRData.type,
+                    data: currentQRData.data,
+                    settings: currentQRData.settings,
+                    imageData: imageData,
+                    createdAt: new Date().toISOString()
+                });
+
+                showNotification('QR Code saved to your history!');
+                loadUserHistory();
+            } catch (error) {
+                console.error('Error saving QR code:', error);
+                showNotification('Error saving QR code', 'error');
+            }
+        });
+
+        // Load user history
+        async function loadUserHistory() {
+            const historyContainer = document.getElementById('historyContainer');
+            
+            try {
+                const q = query(
+                    collection(db, "qrCodes"),
+                    where("userId", "==", currentUser.userId),
+                    orderBy("createdAt", "desc")
+                );
+
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    historyContainer.innerHTML = '<div class="empty-state"><p>No saved QR codes yet.</p></div>';
+                    return;
+                }
+
+                let tableHTML = `
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Content</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                querySnapshot.forEach((doc) => {
+                    const qr = doc.data();
+                    const date = new Date(qr.createdAt).toLocaleString();
+                    const shortData = qr.data.length > 50 ? qr.data.substring(0, 50) + '...' : qr.data;
+
+                    tableHTML += `
+                        <tr>
+                            <td><span class="qr-type-badge">${qr.type}</span></td>
+                            <td>${shortData}</td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="action-btn" onclick="viewQR('${doc.id}')">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                historyContainer.innerHTML = tableHTML;
+
+            } catch (error) {
+                console.error('Error loading history:', error);
+                historyContainer.innerHTML = '<div class="empty-state"><p>Error loading history</p></div>';
+            }
+        }
+
+        // Load history on page load
+        loadUserHistory();
+
+        // Make viewQR global
+        window.viewQR = async function(qrId) {
+            // Implementation for viewing saved QR code
+            showNotification('Feature coming soon: View saved QR code');
+        };
+    </script>
+</body>
+</html>
