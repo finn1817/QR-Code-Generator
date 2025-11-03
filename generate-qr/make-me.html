@@ -526,7 +526,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
@@ -665,6 +665,110 @@
 
         qrTypeSelect.addEventListener('change', updateFormFields);
         updateFormFields();
+
+        // Helpers to sync UI from loaded QR
+        function setColorInputs({ colorDark, colorLight }) {
+            if (colorDark) {
+                document.getElementById('colorDark').value = colorDark;
+                document.getElementById('colorDarkText').value = colorDark;
+            }
+            if (colorLight) {
+                document.getElementById('colorLight').value = colorLight;
+                document.getElementById('colorLightText').value = colorLight;
+            }
+        }
+
+        function parseMailtoData(mailtoStr) {
+            // Format: mailto:email?subject=...&body=...
+            let email = '';
+            let subject = '';
+            let body = '';
+
+            if (mailtoStr.startsWith('mailto:')) {
+                const noScheme = mailtoStr.substring('mailto:'.length);
+                const [addr, query] = noScheme.split('?');
+                email = decodeURIComponent(addr || '');
+                if (query) {
+                    query.split('&').forEach(pair => {
+                        const [k, v] = pair.split('=');
+                        if (k === 'subject') subject = decodeURIComponent(v || '');
+                        if (k === 'body') body = decodeURIComponent(v || '');
+                    });
+                }
+            }
+            return { email, subject, body };
+        }
+
+        function parseWiFiData(wifiStr) {
+            // Format: WIFI:T:WPA;S:MySSID;P:mypass;;
+            const result = { ssid: '', password: '', encryption: 'WPA' };
+            if (wifiStr.startsWith('WIFI:')) {
+                const body = wifiStr.substring('WIFI:'.length);
+                const parts = body.split(';');
+                parts.forEach(p => {
+                    if (p.startsWith('S:')) result.ssid = p.substring(2);
+                    if (p.startsWith('P:')) result.password = p.substring(2);
+                    if (p.startsWith('T:')) result.encryption = p.substring(2);
+                });
+            }
+            return result;
+        }
+
+        function populateFormFromQR(qr) {
+            // Set type selector and rebuild fields
+            if (qr.type && formTemplates[qr.type]) {
+                qrTypeSelect.value = qr.type;
+                updateFormFields();
+            }
+
+            // Size & colors
+            const size = qr?.settings?.size || 256;
+            document.getElementById('qrSize').value = size;
+            setColorInputs({
+                colorDark: qr?.settings?.colorDark || '#000000',
+                colorLight: qr?.settings?.colorLight || '#ffffff'
+            });
+
+            // Fill dynamic fields
+            switch (qr.type) {
+                case 'URL': {
+                    const el = document.getElementById('urlInput');
+                    if (el) el.value = qr.data || '';
+                    break;
+                }
+                case 'Text': {
+                    const el = document.getElementById('textInput');
+                    if (el) el.value = qr.data || '';
+                    break;
+                }
+                case 'Email': {
+                    const { email, subject, body } = parseMailtoData(qr.data || '');
+                    const e = document.getElementById('emailInput');
+                    const s = document.getElementById('emailSubject');
+                    const b = document.getElementById('emailBody');
+                    if (e) e.value = email;
+                    if (s) s.value = subject;
+                    if (b) b.value = body;
+                    break;
+                }
+                case 'Phone': {
+                    const el = document.getElementById('phoneInput');
+                    const phone = (qr.data || '').replace(/^tel:/, '');
+                    if (el) el.value = phone;
+                    break;
+                }
+                case 'WiFi': {
+                    const { ssid, password, encryption } = parseWiFiData(qr.data || '');
+                    const s = document.getElementById('wifiSSID');
+                    const p = document.getElementById('wifiPassword');
+                    const t = document.getElementById('wifiEncryption');
+                    if (s) s.value = ssid;
+                    if (p) p.value = password;
+                    if (t) t.value = encryption;
+                    break;
+                }
+            }
+        }
 
         // Color pickers
         const colorDark = document.getElementById('colorDark');
@@ -821,8 +925,8 @@
             showNotification(`QR Code downloaded as ${format.toUpperCase()}`);
         }
 
-        document.getElementById('downloadPNG').addEventListener('click', () => downloadQRCode('png'));
-        document.getElementById('downloadJPG').addEventListener('click', () => downloadQRCode('jpg'));
+    document.getElementById('downloadPNG').addEventListener('click', () => downloadQRCode('png'));
+    document.getElementById('downloadJPG').addEventListener('click', () => downloadQRCode('jpg'));
 
         // Save to history
         document.getElementById('saveToHistory').addEventListener('click', async () => {
@@ -919,13 +1023,71 @@
             }
         }
 
+        // Helper to render a QR into the preview from given values
+        function renderQRFromValues({ text, size = 256, colorDark = '#000000', colorLight = '#ffffff' }) {
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+
+            qrcodeInstance = new QRCode(qrcodeContainer, {
+                text,
+                width: size,
+                height: size,
+                colorDark,
+                colorLight,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Ensure single visible QR (remove extra canvases/images)
+            const canvases = qrcodeContainer.querySelectorAll('canvas');
+            const images = qrcodeContainer.querySelectorAll('img');
+            if (canvases.length > 1) {
+                for (let i = 0; i < canvases.length - 1; i++) {
+                    canvases[i].remove();
+                }
+            }
+            if (images.length > 0 && qrcodeContainer.querySelector('canvas')) {
+                images.forEach(img => img.remove());
+            }
+
+            document.getElementById('downloadButtons').style.display = 'flex';
+        }
+
         // Load history on page load
         loadUserHistory();
 
         // Make viewQR global
         window.viewQR = async function(qrId) {
-            // Implementation for viewing saved QR code
-            showNotification('Feature coming soon: View saved QR code');
+            try {
+                const docSnap = await getDoc(doc(db, 'qrCodes', qrId));
+                if (!docSnap.exists()) {
+                    showNotification('Saved QR not found', 'error');
+                    return;
+                }
+
+                const qr = docSnap.data();
+                const size = qr?.settings?.size || 256;
+                const colorDark = qr?.settings?.colorDark || '#000000';
+                const colorLight = qr?.settings?.colorLight || '#ffffff';
+
+                // Update current state and render
+                currentQRData = {
+                    type: qr.type,
+                    data: qr.data,
+                    settings: { size, colorDark, colorLight }
+                };
+
+                // Populate the form UI to match this saved QR
+                populateFormFromQR(currentQRData);
+
+                renderQRFromValues({ text: qr.data, size, colorDark, colorLight });
+
+                // Smoothly bring preview into view
+                document.querySelector('.qr-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showNotification('Loaded saved QR code');
+            } catch (error) {
+                console.error('Error loading saved QR code:', error);
+                showNotification('Error loading saved QR code', 'error');
+            }
         };
     </script>
 </body>
