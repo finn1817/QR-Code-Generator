@@ -726,6 +726,7 @@
             return data;
         }
 
+        const generateBtnEl = document.getElementById('generateBtn');
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const qrData = getQRData();
 
@@ -742,6 +743,9 @@
             const lightColor = colorLight.value;
 
             try {
+                // Prevent accidental double-clicks while generating
+                generateBtnEl.disabled = true;
+
                 qrcodeInstance = new QRCode(qrcodeContainer, {
                     text: qrData,
                     width: size,
@@ -750,6 +754,20 @@
                     colorLight: lightColor,
                     correctLevel: QRCode.CorrectLevel.H
                 });
+
+                // Some versions of qrcodejs may append an <img> in addition to <canvas>.
+                // Keep only one canvas for display to avoid showing duplicates.
+                const canvases = qrcodeContainer.querySelectorAll('canvas');
+                const images = qrcodeContainer.querySelectorAll('img');
+                if (canvases.length > 1) {
+                    // Remove all but the last canvas
+                    for (let i = 0; i < canvases.length - 1; i++) {
+                        canvases[i].remove();
+                    }
+                }
+                if (images.length > 0 && qrcodeContainer.querySelector('canvas')) {
+                    images.forEach(img => img.remove());
+                }
 
                 currentQRData = {
                     type: qrTypeSelect.value,
@@ -777,6 +795,8 @@
             } catch (error) {
                 console.error('Error generating QR code:', error);
                 showNotification('Error generating QR code', 'error');
+            } finally {
+                generateBtnEl.disabled = false;
             }
         });
 
@@ -837,10 +857,10 @@
             const historyContainer = document.getElementById('historyContainer');
             
             try {
+                // Avoid composite index requirement by filtering only, then sorting client-side
                 const q = query(
                     collection(db, "qrCodes"),
-                    where("userId", "==", currentUser.userId),
-                    orderBy("createdAt", "desc")
+                    where("userId", "==", currentUser.userId)
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -849,6 +869,13 @@
                     historyContainer.innerHTML = '<div class="empty-state"><p>No saved QR codes yet.</p></div>';
                     return;
                 }
+
+                // Collect docs and sort by createdAt desc in JS
+                const items = [];
+                querySnapshot.forEach((doc) => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 let tableHTML = `
                     <table class="history-table">
@@ -863,18 +890,17 @@
                         <tbody>
                 `;
 
-                querySnapshot.forEach((doc) => {
-                    const qr = doc.data();
-                    const date = new Date(qr.createdAt).toLocaleString();
-                    const shortData = qr.data.length > 50 ? qr.data.substring(0, 50) + '...' : qr.data;
+                items.forEach((qrDoc) => {
+                    const date = new Date(qrDoc.createdAt).toLocaleString();
+                    const shortData = qrDoc.data.length > 50 ? qrDoc.data.substring(0, 50) + '...' : qrDoc.data;
 
                     tableHTML += `
                         <tr>
-                            <td><span class="qr-type-badge">${qr.type}</span></td>
+                            <td><span class="qr-type-badge">${qrDoc.type}</span></td>
                             <td>${shortData}</td>
                             <td>${date}</td>
                             <td>
-                                <button class="action-btn" onclick="viewQR('${doc.id}')">View</button>
+                                <button class="action-btn" onclick="viewQR('${qrDoc.id}')">View</button>
                             </td>
                         </tr>
                     `;
