@@ -76,6 +76,12 @@
             align-items: center;
         }
 
+        .user-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
         .btn {
             padding: 10px 20px;
             border: none;
@@ -242,6 +248,7 @@
     <header class="header">
         <h1>📊 Activity Logs</h1>
         <div class="header-actions">
+            <div class="user-info">Hey there, <strong id="userEmail">user@example.com</strong></div>
             <button class="theme-toggle" id="themeToggle" title="Toggle Theme">🌙</button>
             <button class="btn btn-secondary" id="manageMembersBtn">Manage Members</button>
             <button class="btn btn-secondary" id="backToAppBtn">Back to Generator</button>
@@ -290,7 +297,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, orderBy, query, updateDoc, doc, where } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
@@ -320,11 +327,35 @@
             themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
         }
 
-        applyTheme(currentUser.theme);
+        // Display email
+        const userEmailEl = document.getElementById('userEmail');
+        if (userEmailEl) userEmailEl.textContent = currentUser.email;
 
-        themeToggle.addEventListener('click', () => {
+        // Resolve and apply initial theme
+        const resolvedTheme = currentUser.theme || (typeof currentUser.themeStatus === 'boolean' ? (currentUser.themeStatus ? 'light' : 'dark') : 'light');
+        applyTheme(resolvedTheme);
+
+        themeToggle.addEventListener('click', async () => {
             const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             applyTheme(newTheme);
+
+            // Persist to Firebase and session
+            try {
+                const usersRef = collection(db, 'Users');
+                const q = query(usersRef, where('email', '==', currentUser.email));
+                const snap = await getDocs(q);
+                snap.forEach(async (docSnap) => {
+                    await updateDoc(doc(db, 'Users', docSnap.id), {
+                        theme: newTheme,
+                        themeStatus: (newTheme === 'light')
+                    });
+                });
+                currentUser.theme = newTheme;
+                currentUser.themeStatus = (newTheme === 'light');
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            } catch (err) {
+                console.error('Error updating theme:', err);
+            }
         });
 
         // Navigation

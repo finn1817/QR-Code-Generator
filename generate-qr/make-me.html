@@ -442,7 +442,7 @@
         <h1>🔲 QR-Codes by Dan</h1>
         <div class="header-actions">
             <div class="user-info">
-                Welcome, <strong id="userName">User</strong>
+                Hey there, <strong id="userEmail">user@example.com</strong>
             </div>
             <button class="theme-toggle" id="themeToggle" title="Toggle Theme">🌙</button>
             <button class="btn btn-secondary" id="myQRsBtn">My QR Codes</button>
@@ -546,8 +546,9 @@
             window.location.href = '../index.html';
         }
 
-        // Display user info
-        document.getElementById('userName').textContent = currentUser.displayName;
+    // Display user info (email)
+    const userEmailEl = document.getElementById('userEmail');
+    if (userEmailEl) userEmailEl.textContent = currentUser.email;
 
         // Show admin button if admin
         if (currentUser.isAdmin === 0) {
@@ -564,14 +565,15 @@
             localStorage.setItem('appTheme', theme);
         }
 
-        // Apply user's saved theme
-        applyTheme(currentUser.theme);
+        // Resolve and apply user's saved theme (fallback to themeStatus boolean)
+        const resolvedTheme = currentUser.theme || (typeof currentUser.themeStatus === 'boolean' ? (currentUser.themeStatus ? 'light' : 'dark') : 'light');
+        applyTheme(resolvedTheme);
 
         themeToggle.addEventListener('click', async () => {
             const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             applyTheme(newTheme);
             
-            // Update theme in Firebase
+            // Update theme in Firebase and session
             try {
                 const usersRef = collection(db, "Users");
                 const q = query(usersRef, where("email", "==", currentUser.email));
@@ -579,11 +581,13 @@
                 
                 querySnapshot.forEach(async (docSnap) => {
                     await updateDoc(doc(db, "Users", docSnap.id), {
-                        theme: newTheme
+                        theme: newTheme,
+                        themeStatus: (newTheme === 'light')
                     });
                 });
 
                 currentUser.theme = newTheme;
+                currentUser.themeStatus = (newTheme === 'light');
                 sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             } catch (error) {
                 console.error('Error updating theme:', error);

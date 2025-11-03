@@ -240,7 +240,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
@@ -313,10 +313,28 @@
                     return;
                 }
 
-                // Update last login
-                await updateDoc(doc(db, "Users", userId), {
-                    lastLogin: new Date().toISOString()
-                });
+                // Resolve theme from user doc, ensure defaults, and persist missing fields
+                let theme = 'light';
+                let themeStatus = null; // true => light, false => dark
+
+                if (typeof userDoc.themeStatus === 'boolean') {
+                    themeStatus = userDoc.themeStatus;
+                    theme = themeStatus ? 'light' : 'dark';
+                } else if (userDoc.theme) {
+                    theme = userDoc.theme;
+                    themeStatus = (theme === 'light');
+                } else {
+                    theme = 'light';
+                    themeStatus = true;
+                }
+
+                // Update last login and backfill theme fields if needed
+                const updatePayload = { lastLogin: new Date().toISOString() };
+                if (userDoc.theme !== theme) updatePayload.theme = theme;
+                if (typeof userDoc.themeStatus !== 'boolean') updatePayload.themeStatus = themeStatus;
+                if (Object.keys(updatePayload).length > 0) {
+                    await updateDoc(doc(db, "Users", userId), updatePayload);
+                }
 
                 // Store user session
                 sessionStorage.setItem('currentUser', JSON.stringify({
@@ -324,7 +342,8 @@
                     email: userDoc.email,
                     displayName: userDoc.displayName,
                     isAdmin: userDoc.isAdmin,
-                    theme: userDoc.theme
+                    theme: theme,
+                    themeStatus: themeStatus
                 }));
 
                 showSuccess('Login successful! Redirecting...');
