@@ -240,7 +240,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
@@ -251,50 +251,9 @@
             appId: "1:482907274907:web:2c23dc2ea89ea4d3a1103e"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // Seed dummy data on first load
-        async function seedDummyData() {
-            try {
-                const usersRef = collection(db, "Users");
-                
-                // Check if admin exists
-                const adminQuery = query(usersRef, where("email", "==", "admin@test.com"));
-                const adminSnapshot = await getDocs(adminQuery);
-
-                if (adminSnapshot.empty) {
-                    // Create Admin Account
-                    await setDoc(doc(db, "Users", "admin_user"), {
-                        email: "admin@test.com",
-                        displayName: "Dan (Admin)",
-                        password: "admin123",
-                        isAdmin: 0,
-                        theme: "dark",
-                        createdAt: new Date().toISOString(),
-                        lastLogin: new Date().toISOString()
-                    });
-
-                    // Create Regular User Account
-                    await setDoc(doc(db, "Users", "regular_user"), {
-                        email: "user@test.com",
-                        displayName: "Test User",
-                        password: "user123",
-                        isAdmin: 1,
-                        theme: "light",
-                        createdAt: new Date().toISOString(),
-                        lastLogin: new Date().toISOString()
-                    });
-
-                    console.log("✅ Dummy accounts created!");
-                }
-            } catch (error) {
-                console.error("Error seeding data:", error);
-            }
-        }
-
-        // Seed data on load
-        seedDummyData();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    // Note: dummy user seeding removed (users are now managed in Firestore).
 
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
