@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-Codes by Dan - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d1;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #7c3aed;
+            --accent-hover: #6366f1;
+            --border-color: #2d3748;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #7c3aed;
+            --accent-hover: #6366f1;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .login-container {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px var(--shadow);
+            width: 100%;
+            max-width: 420px;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-section h1 {
+            color: var(--text-primary);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .logo-section p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 15px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .logo-section h1 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="login-container">
+        <div class="logo-section">
+            <h1>🔲 QR-Codes by Dan</h1>
+            <p>Generate professional QR codes instantly</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="admin@test.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+        </form>
+
+        <div class="register-link">
+            <p>Test Accounts: <strong>admin@test.com / admin123</strong> or <strong>user@test.com / user123</strong></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzR1jpDwogZKsYZ1jE7cNZHrVgYGlxhLw",
+            authDomain: "qr-code-generator-a7892.firebaseapp.com",
+            projectId: "qr-code-generator-a7892",
+            storageBucket: "qr-code-generator-a7892.firebasestorage.app",
+            messagingSenderId: "482907274907",
+            appId: "1:482907274907:web:2c23dc2ea89ea4d3a1103e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Seed dummy data on first load
+        async function seedDummyData() {
+            try {
+                const usersRef = collection(db, "Users");
+                
+                // Check if admin exists
+                const adminQuery = query(usersRef, where("email", "==", "admin@test.com"));
+                const adminSnapshot = await getDocs(adminQuery);
+
+                if (adminSnapshot.empty) {
+                    // Create Admin Account
+                    await setDoc(doc(db, "Users", "admin_user"), {
+                        email: "admin@test.com",
+                        displayName: "Dan (Admin)",
+                        password: "admin123",
+                        isAdmin: 0,
+                        theme: "dark",
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString()
+                    });
+
+                    // Create Regular User Account
+                    await setDoc(doc(db, "Users", "regular_user"), {
+                        email: "user@test.com",
+                        displayName: "Test User",
+                        password: "user123",
+                        isAdmin: 1,
+                        theme: "light",
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString()
+                    });
+
+                    console.log("✅ Dummy accounts created!");
+                }
+            } catch (error) {
+                console.error("Error seeding data:", error);
+            }
+        }
+
+        // Seed data on load
+        seedDummyData();
+
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            loginBtn.classList.add('loading');
+            loginBtn.textContent = 'Signing in';
+
+            try {
+                const usersRef = collection(db, "Users");
+                const q = query(usersRef, where("email", "==", email));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    showError('Account not found');
+                    loginBtn.classList.remove('loading');
+                    loginBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                let userDoc = null;
+                let userId = null;
+
+                querySnapshot.forEach((doc) => {
+                    userDoc = doc.data();
+                    userId = doc.id;
+                });
+
+                if (userDoc.password !== password) {
+                    showError('Incorrect password');
+                    loginBtn.classList.remove('loading');
+                    loginBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                // Update last login
+                await updateDoc(doc(db, "Users", userId), {
+                    lastLogin: new Date().toISOString()
+                });
+
+                // Store user session
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    userId: userId,
+                    email: userDoc.email,
+                    displayName: userDoc.displayName,
+                    isAdmin: userDoc.isAdmin,
+                    theme: userDoc.theme
+                }));
+
+                showSuccess('Login successful! Redirecting...');
+
+                setTimeout(() => {
+                    window.location.href = 'generate-qr/make-me.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Login failed. Please try again.');
+                loginBtn.classList.remove('loading');
+                loginBtn.textContent = 'Sign In';
+            }
+        });
+
+        // Apply saved theme (default dark for login page)
+        const savedTheme = localStorage.getItem('appTheme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+    </script>
+</body>
+</html>
